@@ -1,0 +1,9 @@
+2025-01-26 03:20:17 [Nodemailer] error: Email could not be sent. Reason: Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to
+535 5.7.8  https://support.google.com/mail/?p=BadCredentials d2e1a72fcca58-72f8a69fe05sm4188564b3a.27 - gsmtp
+2025-01-26 03:21:28 [Nodemailer] error: Email could not be sent. Reason: Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to
+535 5.7.8  https://support.google.com/mail/?p=BadCredentials 98e67ed59e1d1-2f7ff959309sm4111083a91.0 - gsmtp
+2025-01-26 03:24:01 [Nodemailer] error: Email could not be sent. Reason: No recipients defined
+2025-01-26 03:24:37 [Nodemailer] error: Email could not be sent. Reason: No recipients defined
+2025-01-26 03:35:41 [auth.middleware] error: Token blacklisted
+2025-01-26 03:35:52 [auth.middleware] error: Token blacklisted
+2025-01-26 03:36:04 [auth.middleware] error: Token blacklisted
