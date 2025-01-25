@@ -1,18 +1,16 @@
 import express, { Request, Response, NextFunction } from "express";
-import { Server } from "socket.io";
+
 import morgan from "morgan";
 
 import { PrismaClient } from "@prisma/client";
-import { createServer } from "http";
+import { createServer, Server } from "http";
 import cors from "cors";
 import { globalErrorHandler } from "./helpers/globalErrorHandler";
 import router from "./routes";
+import config from "./config/config";
 
 const app = express();
-const httpServer = createServer(app);
-const io = new Server(httpServer, {
-  cors: { origin: "*" }
-});
+
 export const prisma = new PrismaClient();
 
 app.use(morgan("dev"));
@@ -32,11 +30,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   });
 });
 
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  globalErrorHandler(err, req, res, next);
-});
+app.use(globalErrorHandler);
 
-const PORT = process.env.PORT || 5000;
-httpServer.listen(PORT, () => {
+const PORT = config.PORT || 5000;
+app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

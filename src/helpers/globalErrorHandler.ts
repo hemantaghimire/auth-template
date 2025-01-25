@@ -39,24 +39,18 @@ export const globalErrorHandler = (
     error = handleJWTExpired();
   }
 
-
   if (process.env.NODE_ENV === "development") {
     if (error instanceof AppError) {
-      return responseFormatter(
-        res,
-        error.statusCode,
-        error.message,
-        error.stack
-      );
+      responseFormatter(res, error.statusCode, error.message, error.stack);
     }
-    return responseFormatter(res, 500, error.message, error.stack);
+    responseFormatter(res, 500, error.message, error.stack);
   }
 
   // Production error response
   if (error instanceof AppError) {
-    return responseFormatter(res, error.statusCode, error.message, null);
+    responseFormatter(res, error.statusCode, error.message, null);
   }
 
   // Generic error for production
-  return responseFormatter(res, 500, "Something went wrong", null);
+  responseFormatter(res, 500, "Something went wrong", null);
 };
