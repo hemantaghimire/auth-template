@@ -69,13 +69,13 @@ class AuthService {
     const accessToken = generateToken({
       payload: { id: user.id },
       secret: config.ACCESS_TOKEN_SECRET!,
-      expiresIn: config.ACCESS_TOKEN_EXPIRES_IN as SignOptions["expiresIn"]
+      expiresIn: config.ACCESS_TOKEN_EXPIRES_IN
     });
 
     const refreshToken = generateToken({
       payload: { id: user.id },
       secret: config.REFRESH_TOKEN_SECRET!,
-      expiresIn: config.REFRESH_TOKEN_EXPIRES_IN as SignOptions["expiresIn"]
+      expiresIn: config.REFRESH_TOKEN_EXPIRES_IN
     });
 
     await this.prisma.user.update({
@@ -175,12 +175,12 @@ class AuthService {
     const accessToken = generateToken({
       payload: { id: user.id },
       secret: config.ACCESS_TOKEN_SECRET!,
-      expiresIn: config.ACCESS_TOKEN_EXPIRES_IN as SignOptions["expiresIn"]
+      expiresIn: config.ACCESS_TOKEN_EXPIRES_IN
     });
     const refreshToken = generateToken({
       payload: { id: user.id },
       secret: config.REFRESH_TOKEN_SECRET!,
-      expiresIn: config.REFRESH_TOKEN_EXPIRES_IN as SignOptions["expiresIn"]
+      expiresIn: config.REFRESH_TOKEN_EXPIRES_IN
     });
 
     return { accessToken, refreshToken };
@@ -197,8 +197,7 @@ class AuthService {
     const resetToken = generateToken({
       payload: { id: user.id },
       secret: config.RESET_PASSWORD_TOKEN_SECRET!,
-      expiresIn:
-        config.RESET_PASSWORD_TOKEN_EXPIRES_IN as SignOptions["expiresIn"]
+      expiresIn: config.RESET_PASSWORD_TOKEN_EXPIRES_IN
     });
 
     await sendEmail({
@@ -260,13 +259,13 @@ class AuthService {
     const accessToken = generateToken({
       payload: { id: user.id },
       secret: config.ACCESS_TOKEN_SECRET!,
-      expiresIn: config.ACCESS_TOKEN_EXPIRES_IN as SignOptions["expiresIn"]
+      expiresIn: config.ACCESS_TOKEN_EXPIRES_IN
     });
 
     const refreshToken = generateToken({
       payload: { id: user.id },
       secret: config.REFRESH_TOKEN_SECRET!,
-      expiresIn: config.REFRESH_TOKEN_EXPIRES_IN as SignOptions["expiresIn"]
+      expiresIn: config.REFRESH_TOKEN_EXPIRES_IN
     });
 
     await prisma.user.update({

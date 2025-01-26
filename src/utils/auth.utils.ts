@@ -23,10 +23,10 @@ export const generateToken = ({
 }: {
   payload: string | object | Buffer;
   secret: string;
-  expiresIn: SignOptions["expiresIn"];
+  expiresIn: string | number;
 }) => {
   return jwt.sign(payload, secret!, {
-    expiresIn: expiresIn
+    expiresIn: expiresIn as SignOptions["expiresIn"]
   });
 };
 
