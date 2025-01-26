@@ -20,6 +20,9 @@ import {
 import config from "../config/config";
 import { sendEmail } from "../config/nodemailer.config";
 import { User } from "@prisma/client";
+import getLogger from "../config/logger.config";
+
+const logger = getLogger("auth.service");
 
 class AuthService {
   private readonly prisma = prisma;
@@ -54,7 +57,7 @@ class AuthService {
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const user = await this.getUserByEmail(data.email);
 
-    if (!user) {
+    if (!user || !user.password) {
       throw new AppError("User not found", 404);
     }
 
@@ -106,7 +109,7 @@ class AuthService {
     data: changePasswordInput
   ): Promise<void> {
     const user = await this.getUserById(userId);
-    if (!user) {
+    if (!user || !user.password) {
       throw new AppError("User not found", 404);
     }
 
@@ -242,6 +245,37 @@ class AuthService {
         data: { refreshToken: null }
       })
     ]);
+  }
+
+  async oauthCallback(user: User): Promise<{
+    accessToken: string;
+    refreshToken: string;
+  }> {
+    if (!user) {
+      logger.error("OAuth callback received no user");
+      throw new AppError("Authentication failed", 401);
+    }
+
+    const accessToken = generateToken({
+      payload: { id: user.id },
+      secret: config.ACCESS_TOKEN_SECRET!,
+      expiresIn: config.ACCESS_TOKEN_EXPIRES_IN!
+    });
+
+    const refreshToken = generateToken({
+      payload: { id: user.id },
+      secret: config.REFRESH_TOKEN_SECRET!,
+      expiresIn: config.REFRESH_TOKEN_EXPIRES_IN!
+    });
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { refreshToken }
+    });
+
+    logger.info(`OAuth login successful for user: ${user.id}`);
+
+    return { accessToken, refreshToken };
   }
 }
 

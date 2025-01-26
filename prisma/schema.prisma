@@ -11,7 +11,7 @@ model User {
   id       String    @id @default(uuid())
   username String
   email    String    @unique
-  password String
+  password String?
   avatar   String?
   bio      String?
   phone    String?
@@ -20,7 +20,6 @@ model User {
   website  String?
 
   googleId   String? @unique
-  facebookId String? @unique
   githubId   String? @unique
 
   isEmailVerified Boolean   @default(false)

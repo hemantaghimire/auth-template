@@ -3,6 +3,7 @@ import AuthController from "../controllers/auth.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import validateSchema from "../middlewares/schemaValidation.middleware";
 import authValidator from "../validators/auth.validator";
+import passport from "passport";
 
 const router = express.Router();
 
@@ -51,5 +52,23 @@ router
   .post(authMiddleware, AuthController.refreshToken);
 
 router.route("/logout").post(authMiddleware, AuthController.logout);
+
+// OAuth
+
+router.get("/google", passport.authenticate("google"));
+
+router.get(
+  "/google/callback",
+  passport.authenticate("google", { session: false }),
+  AuthController.oauthCallback
+);
+
+router.get("/github", passport.authenticate("github"));
+
+router.get(
+  "/callback/github",
+  passport.authenticate("github", { session: false }),
+  AuthController.oauthCallback
+);
 
 export default router;

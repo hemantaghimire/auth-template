@@ -11,6 +11,7 @@ import {
   updateProfileInput
 } from "../types/types";
 import { AppError } from "../helpers/appError";
+import { User } from "@prisma/client";
 
 export class AuthController {
   public static authService: AuthService = new AuthService();
@@ -125,6 +126,20 @@ export class AuthController {
 
       await this.authService.logout(id, token!);
       responseFormatter(res, 200, "User logged out successfully");
+    }
+  );
+
+  static oauthCallback = asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
+      const user = req.user as User;
+
+      const { accessToken, refreshToken } =
+        await this.authService.oauthCallback(user);
+
+      responseFormatter(res, 200, "Successfully logged in", {
+        accessToken,
+        refreshToken
+      });
     }
   );
 }
