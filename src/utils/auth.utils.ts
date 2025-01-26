@@ -1,12 +1,6 @@
 import bcrypt from "bcrypt";
 import jwt, { SignOptions, JwtPayload } from "jsonwebtoken";
 
-interface GenerateTokenParams {
-  payload: string | object | Buffer;
-  secret: string;
-  expiresIn: string;
-}
-
 export const hashPassword = async (password: string): Promise<string> => {
   console.log(password);
   const hash = await bcrypt.hash(password, 10);
@@ -26,12 +20,14 @@ export const generateToken = ({
   payload,
   secret,
   expiresIn
-}: GenerateTokenParams): string => {
-  const options: SignOptions = {
-    expiresIn: Number(expiresIn)
-  };
-
-  return jwt.sign(payload, secret, options);
+}: {
+  payload: string | object | Buffer;
+  secret: string;
+  expiresIn: SignOptions["expiresIn"];
+}) => {
+  return jwt.sign(payload, secret!, {
+    expiresIn: expiresIn
+  });
 };
 
 export const verifyToken = (token: string, secret: string): JwtPayload => {

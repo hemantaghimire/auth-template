@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt, { JwtPayload, SignOptions } from "jsonwebtoken";
 import { prisma } from "../config/database.config";
 import {
   comparePasswords,
@@ -69,13 +69,13 @@ class AuthService {
     const accessToken = generateToken({
       payload: { id: user.id },
       secret: config.ACCESS_TOKEN_SECRET!,
-      expiresIn: config.ACCESS_TOKEN_EXPIRES_IN!
+      expiresIn: config.ACCESS_TOKEN_EXPIRES_IN as SignOptions["expiresIn"]
     });
 
     const refreshToken = generateToken({
       payload: { id: user.id },
       secret: config.REFRESH_TOKEN_SECRET!,
-      expiresIn: config.REFRESH_TOKEN_EXPIRES_IN!
+      expiresIn: config.REFRESH_TOKEN_EXPIRES_IN as SignOptions["expiresIn"]
     });
 
     await this.prisma.user.update({
@@ -175,12 +175,12 @@ class AuthService {
     const accessToken = generateToken({
       payload: { id: user.id },
       secret: config.ACCESS_TOKEN_SECRET!,
-      expiresIn: config.ACCESS_TOKEN_EXPIRES_IN!
+      expiresIn: config.ACCESS_TOKEN_EXPIRES_IN as SignOptions["expiresIn"]
     });
     const refreshToken = generateToken({
       payload: { id: user.id },
       secret: config.REFRESH_TOKEN_SECRET!,
-      expiresIn: config.REFRESH_TOKEN_EXPIRES_IN!
+      expiresIn: config.REFRESH_TOKEN_EXPIRES_IN as SignOptions["expiresIn"]
     });
 
     return { accessToken, refreshToken };
@@ -197,7 +197,8 @@ class AuthService {
     const resetToken = generateToken({
       payload: { id: user.id },
       secret: config.RESET_PASSWORD_TOKEN_SECRET!,
-      expiresIn: config.RESET_PASSWORD_TOKEN_EXPIRES_IN!
+      expiresIn:
+        config.RESET_PASSWORD_TOKEN_EXPIRES_IN as SignOptions["expiresIn"]
     });
 
     await sendEmail({
@@ -259,13 +260,13 @@ class AuthService {
     const accessToken = generateToken({
       payload: { id: user.id },
       secret: config.ACCESS_TOKEN_SECRET!,
-      expiresIn: config.ACCESS_TOKEN_EXPIRES_IN!
+      expiresIn: config.ACCESS_TOKEN_EXPIRES_IN as SignOptions["expiresIn"]
     });
 
     const refreshToken = generateToken({
       payload: { id: user.id },
       secret: config.REFRESH_TOKEN_SECRET!,
-      expiresIn: config.REFRESH_TOKEN_EXPIRES_IN!
+      expiresIn: config.REFRESH_TOKEN_EXPIRES_IN as SignOptions["expiresIn"]
     });
 
     await prisma.user.update({
