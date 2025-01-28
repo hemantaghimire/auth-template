@@ -1,6 +1,20 @@
+import dotenv from "dotenv";
+
+if (process.env.NODE_ENV === "development") {
+  dotenv.config({
+    path: "./.env"
+  });
+} else if (process.env.NODE_ENV === "production") {
+  dotenv.config({ path: "./.env.production" });
+} else if (process.env.NODE_ENV === "test") {
+  dotenv.config({ path: "./.env.test" });
+}
+
 export default {
   PORT: process.env.PORT || 4000,
   NODE_ENV: process.env.NODE_ENV || "development",
+  BASE_URL: process.env.BASE_URL,
+
   DATABASE_URL: process.env.DATABASE_URL,
   CLIENT_URL: process.env.CLIENT_URL,
   // JWT Credentials for Authentication
@@ -19,6 +33,10 @@ export default {
   SMTP_SERVICE: process.env.SMTP_SERVICE,
   SMTP_EMAIL: process.env.SMTP_EMAIL,
   SMTP_PASSWORD: process.env.SMTP_PASSWORD,
+
+  // SendGrid Credentials
+  // SENDGRID_API_KEY: process.env.SENDGRID_API_KEY!,
+  // SENDGRID_MAIL: process.env.SENDGRID_MAIL!,
 
   // OAuth Credentials
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,

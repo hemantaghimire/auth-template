@@ -7,6 +7,7 @@ interface ResponseObject<T> {
   data: T | null;
   error: unknown;
   paginationData?: PaginationMetadata;
+  timestamp?: Date;
 }
 
 export default function responseFormatter<T>(
@@ -20,11 +21,12 @@ export default function responseFormatter<T>(
 
   const responseObject: ResponseObject<T> = {
     success: isSuccessStatus,
+    statusCode,
     message: message || getDefaultMessage(statusCode),
     data: isSuccessStatus ? data ?? null : null,
     error: !isSuccessStatus ? data : null,
-    statusCode,
-    paginationData
+    paginationData,
+    timestamp: new Date()
   };
 
   return res.status(statusCode).json(responseObject);

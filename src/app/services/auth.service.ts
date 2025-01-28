@@ -1,31 +1,32 @@
-import { Request, Response } from "express";
-import bcrypt from "bcrypt";
-import jwt, { JwtPayload, SignOptions } from "jsonwebtoken";
-import { prisma } from "../config/database.config";
+import { User } from "@prisma/client";
+import { JwtPayload } from "jsonwebtoken";
+import config from "../../config/config";
+import { prisma } from "../../config/database.config";
+import getLogger from "../../config/logger.config";
+import { sendEmail } from "../../config/nodemailer.config";
+import { ConflictException } from "../../errors/ConflictException";
+import { NotFoundException } from "../../errors/NotFoundException";
+import { UnauthorizedException } from "../../errors/UnauthorizedException";
+
+import {
+  ChangePasswordInput,
+  ForgotPasswordInput,
+  LoginInput,
+  RegisterInput,
+  ResetPasswordInput,
+  UpdateProfileInput
+} from "../../validators/auth.validator";
+
 import {
   comparePasswords,
   generateToken,
   hashPassword,
   verifyToken
-} from "../utils/auth.utils";
-import { AppError } from "../helpers/appError";
-import {
-  changePasswordInput,
-  forgotPasswordInput,
-  loginInput,
-  registerInput,
-  resetPasswordInput,
-  updateProfileInput
-} from "../types/types";
-import config from "../config/config";
-import { sendEmail } from "../config/nodemailer.config";
-import { User } from "@prisma/client";
-import getLogger from "../config/logger.config";
+} from "../../utils/auth.utils";
 
-const logger = getLogger("auth.service");
-
-class AuthService {
+export class AuthService {
   private readonly prisma = prisma;
+  private logger = getLogger("auth.service");
 
   private async getUserByEmail(email: string) {
     return await this.prisma.user.findFirst({ where: { email } });
@@ -35,11 +36,27 @@ class AuthService {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
-  async register(data: registerInput): Promise<void> {
+  private async generateAccessAndRefreshTokens(id: string) {
+    const accessToken = generateToken({
+      payload: { id },
+      secret: config.ACCESS_TOKEN_SECRET!,
+      expiresIn: config.ACCESS_TOKEN_EXPIRES_IN
+    });
+
+    const refreshToken = generateToken({
+      payload: { id },
+      secret: config.REFRESH_TOKEN_SECRET!,
+      expiresIn: config.REFRESH_TOKEN_EXPIRES_IN
+    });
+
+    return { accessToken, refreshToken };
+  }
+
+  async register(data: RegisterInput): Promise<void> {
     const userExists = await this.getUserByEmail(data.email);
 
     if (userExists) {
-      throw new AppError("User already exists", 400);
+      throw new ConflictException("User already exists");
     }
 
     const hashedPassword = await hashPassword(data.password);
@@ -50,38 +67,33 @@ class AuthService {
         password: hashedPassword
       }
     });
+
+    this.logger.info(`User with email ${data.email} registered successfully`);
   }
 
   async login(
-    data: loginInput
+    data: LoginInput
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const user = await this.getUserByEmail(data.email);
 
     if (!user || !user.password) {
-      throw new AppError("User not found", 404);
+      throw new UnauthorizedException("Invalid credentials");
     }
 
     const validPassword = await comparePasswords(data.password, user.password);
     if (!validPassword) {
-      throw new AppError("Invalid credentials", 401);
+      throw new UnauthorizedException("Invalid credentials");
     }
 
-    const accessToken = generateToken({
-      payload: { id: user.id },
-      secret: config.ACCESS_TOKEN_SECRET!,
-      expiresIn: config.ACCESS_TOKEN_EXPIRES_IN
-    });
-
-    const refreshToken = generateToken({
-      payload: { id: user.id },
-      secret: config.REFRESH_TOKEN_SECRET!,
-      expiresIn: config.REFRESH_TOKEN_EXPIRES_IN
-    });
+    const { accessToken, refreshToken } =
+      await this.generateAccessAndRefreshTokens(user.id);
 
     await this.prisma.user.update({
       where: { id: user.id },
       data: { refreshToken }
     });
+
+    this.logger.info(`User with email ${data.email} logged in successfully`);
 
     return {
       accessToken,
@@ -98,19 +110,21 @@ class AuthService {
       }
     });
     if (!user) {
-      throw new AppError("User not found", 404);
+      throw new NotFoundException("User not found");
     }
+
+    this.logger.info(`User with id ${userId} retrieved successfully`);
 
     return user;
   }
 
   async updatePassword(
     userId: string,
-    data: changePasswordInput
+    data: ChangePasswordInput
   ): Promise<void> {
     const user = await this.getUserById(userId);
     if (!user || !user.password) {
-      throw new AppError("User not found", 404);
+      throw new NotFoundException("User not found");
     }
 
     const validPassword = await comparePasswords(
@@ -118,7 +132,7 @@ class AuthService {
       user.password
     );
     if (!validPassword) {
-      throw new AppError("Current password is incorrect", 401);
+      throw new UnauthorizedException("Invalid credentials");
     }
 
     const hashedPassword = await hashPassword(data.newPassword);
@@ -127,15 +141,17 @@ class AuthService {
       where: { id: userId },
       data: { password: hashedPassword }
     });
+
+    this.logger.info(`Password updated for user with id ${userId}`);
   }
 
   async updateProfile(
     userId: string,
-    data: updateProfileInput
+    data: UpdateProfileInput
   ): Promise<Partial<User>> {
     const user = await this.getUserById(userId);
     if (!user) {
-      throw new AppError("User not found", 404);
+      throw new NotFoundException("User not found");
     }
 
     const updatedUser = await this.prisma.user.update({
@@ -146,19 +162,20 @@ class AuthService {
         refreshToken: true
       }
     });
-
+    this.logger.info(`Profile updated for user with id ${userId}`);
     return updatedUser;
   }
 
   async deleteAccount(userId: string): Promise<void> {
     const user = await this.getUserById(userId);
     if (!user) {
-      throw new AppError("User not found", 404);
+      throw new NotFoundException("User not found");
     }
 
     await this.prisma.user.delete({
       where: { id: userId }
     });
+    this.logger.info(`User with id ${userId} deleted successfully`);
   }
 
   async refreshToken(
@@ -169,29 +186,32 @@ class AuthService {
     const user = await this.getUserById(decoded.id);
 
     if (!user) {
-      throw new AppError("User not found", 404);
+      throw new NotFoundException("User not found");
     }
 
-    const accessToken = generateToken({
-      payload: { id: user.id },
-      secret: config.ACCESS_TOKEN_SECRET!,
-      expiresIn: config.ACCESS_TOKEN_EXPIRES_IN
+    if (user.refreshToken !== token) {
+      throw new UnauthorizedException("Invalid token");
+    }
+
+    const { accessToken, refreshToken } =
+      await this.generateAccessAndRefreshTokens(user.id);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { refreshToken }
     });
-    const refreshToken = generateToken({
-      payload: { id: user.id },
-      secret: config.REFRESH_TOKEN_SECRET!,
-      expiresIn: config.REFRESH_TOKEN_EXPIRES_IN
-    });
+
+    this.logger.info(`Refresh token generated for user with id ${user.id}`);
 
     return { accessToken, refreshToken };
   }
 
-  async forgetPassword(data: forgotPasswordInput): Promise<void> {
+  async forgetPassword(data: ForgotPasswordInput): Promise<void> {
     const user = await this.getUserByEmail(data.email);
     console.log(user);
 
     if (!user) {
-      throw new AppError("User not found", 404);
+      throw new NotFoundException("User not found");
     }
 
     const resetToken = generateToken({
@@ -200,15 +220,19 @@ class AuthService {
       expiresIn: config.RESET_PASSWORD_TOKEN_EXPIRES_IN
     });
 
+    this.logger.info(
+      `Reset password token generated for user with id ${user.id}`
+    );
+
     await sendEmail({
       email: user.email,
       subject: "Password Reset",
-      message: "Click the link below to reset your password",
+      text: "Click the link below to reset your password",
       html: `<a href="${config.CLIENT_URL}/reset-password/${resetToken}">Reset Password</a>`
     });
   }
 
-  async resetPassword(token: string, data: resetPasswordInput): Promise<void> {
+  async resetPassword(token: string, data: ResetPasswordInput): Promise<void> {
     const decoded = verifyToken(
       token,
       config.RESET_PASSWORD_TOKEN_SECRET!
@@ -217,7 +241,7 @@ class AuthService {
     const user = await this.getUserById(decoded.id);
 
     if (!user) {
-      throw new AppError("User not found", 404);
+      throw new NotFoundException("User not found");
     }
 
     const hashedPassword = await hashPassword(data.password);
@@ -226,11 +250,13 @@ class AuthService {
       where: { id: user.id },
       data: { password: hashedPassword }
     });
+
+    this.logger.info(`Password reset for user with id ${user.id}`);
   }
 
   async logout(userId: string, accessToken: string): Promise<void> {
     if (!accessToken) {
-      throw new AppError("Unauthorized access!", 401);
+      throw new UnauthorizedException("Unauthorized");
     }
 
     await Promise.all([
@@ -245,6 +271,8 @@ class AuthService {
         data: { refreshToken: null }
       })
     ]);
+
+    this.logger.info(`User with id ${userId} logged out successfully`);
   }
 
   async oauthCallback(user: User): Promise<{
@@ -252,31 +280,20 @@ class AuthService {
     refreshToken: string;
   }> {
     if (!user) {
-      logger.error("OAuth callback received no user");
-      throw new AppError("Authentication failed", 401);
+      this.logger.error("OAuth callback received no user");
+      throw new UnauthorizedException("Unauthorized Access");
     }
 
-    const accessToken = generateToken({
-      payload: { id: user.id },
-      secret: config.ACCESS_TOKEN_SECRET!,
-      expiresIn: config.ACCESS_TOKEN_EXPIRES_IN
-    });
-
-    const refreshToken = generateToken({
-      payload: { id: user.id },
-      secret: config.REFRESH_TOKEN_SECRET!,
-      expiresIn: config.REFRESH_TOKEN_EXPIRES_IN
-    });
+    const { accessToken, refreshToken } =
+      await this.generateAccessAndRefreshTokens(user.id);
 
     await prisma.user.update({
       where: { id: user.id },
       data: { refreshToken }
     });
 
-    logger.info(`OAuth login successful for user: ${user.id}`);
+    this.logger.info(`OAuth login successful for user: ${user.id}`);
 
     return { accessToken, refreshToken };
   }
 }
-
-export default AuthService;

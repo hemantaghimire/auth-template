@@ -1,4 +1,7 @@
 import { prisma } from "../../config/database.config";
+import getLogger from "../../config/logger.config";
+
+const logger = getLogger("Google.OAuth");
 
 export const googleCallbackHandler = async (
   accessToken: string,

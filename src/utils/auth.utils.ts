@@ -2,11 +2,7 @@ import bcrypt from "bcrypt";
 import jwt, { SignOptions, JwtPayload } from "jsonwebtoken";
 
 export const hashPassword = async (password: string): Promise<string> => {
-  console.log(password);
-  const hash = await bcrypt.hash(password, 10);
-
-  console.log(hash);
-  return hash;
+  return await bcrypt.hash(password, 10);
 };
 
 export const comparePasswords = async (

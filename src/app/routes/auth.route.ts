@@ -1,26 +1,32 @@
 import express from "express";
 import AuthController from "../controllers/auth.controller";
-import { authMiddleware } from "../middlewares/auth.middleware";
-import validateSchema from "../middlewares/schemaValidation.middleware";
-import authValidator from "../validators/auth.validator";
+import { authMiddleware } from "../../middlewares/auth.middleware";
+import { validateReqBody } from "../../middlewares/schemaValidation.middleware";
+
 import passport from "passport";
+import {
+  changePasswordSchema,
+  forgotPasswordSchema,
+  loginSchema,
+  registerSchema,
+  resetPasswordSchema,
+  updateProfileSchema
+} from "../../validators/auth.validator";
 
 const router = express.Router();
 
 router
   .route("/register")
-  .post(validateSchema(authValidator.registerSchema), AuthController.register);
+  .post(validateReqBody(registerSchema), AuthController.register);
 
-router
-  .route("/login")
-  .post(validateSchema(authValidator.loginSchema), AuthController.login);
+router.route("/login").post(validateReqBody(loginSchema), AuthController.login);
 
 router
   .route("/me")
   .get(authMiddleware, AuthController.getMe)
   .patch(
     authMiddleware,
-    validateSchema(authValidator.updateProfileSchema),
+    validateReqBody(updateProfileSchema),
     AuthController.updateProfile
   )
   .delete(authMiddleware, AuthController.deleteAccount);
@@ -29,23 +35,17 @@ router
   .route("/update-password")
   .post(
     authMiddleware,
-    validateSchema(authValidator.changePasswordSchema),
+    validateReqBody(changePasswordSchema),
     AuthController.updatePassword
   );
 
 router
   .route("/forgot-password")
-  .post(
-    validateSchema(authValidator.forgotPasswordSchema),
-    AuthController.forgetPassword
-  );
+  .post(validateReqBody(forgotPasswordSchema), AuthController.forgetPassword);
 
 router
   .route("/reset-password/:token")
-  .post(
-    validateSchema(authValidator.resetPasswordSchema),
-    AuthController.resetPassword
-  );
+  .post(validateReqBody(resetPasswordSchema), AuthController.resetPassword);
 
 router
   .route("/refresh-token")

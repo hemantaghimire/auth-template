@@ -9,7 +9,7 @@ import getLogger from "./logger.config";
 export interface EmailOptions {
   email: string;
   subject: string;
-  message: string;
+  text: string;
   html?: string;
 }
 
@@ -32,7 +32,7 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
       from: process.env.SMTP_EMAIL,
       to: options.email,
       subject: options.subject,
-      text: options.message,
+      text: options.text,
       html: options.html
     };
 

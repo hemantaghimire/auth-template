@@ -2,10 +2,11 @@ import { User } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 import { JwtPayload, verify } from "jsonwebtoken";
 import { prisma } from "../config/database.config";
-import { AppError } from "../helpers/appError";
 import config from "../config/config";
 import { asyncHandler } from "../helpers/asyncHandler";
 import getLogger from "../config/logger.config";
+import { UnauthorizedException } from "../errors/UnauthorizedException";
+import { NotFoundException } from "../errors/NotFoundException";
 
 declare module "express" {
   interface Request {
@@ -19,8 +20,8 @@ export const authMiddleware = asyncHandler(
     const token = req.headers.authorization?.split(" ")[1];
 
     if (!token) {
-      logger.error("Token not provided");
-      throw new AppError("Token not provided", 401);
+      logger.error("Unauthorized Access");
+      throw new UnauthorizedException("Unauthorized Access");
     }
 
     const decoded = verify(token, config.ACCESS_TOKEN_SECRET!) as JwtPayload;
@@ -34,8 +35,8 @@ export const authMiddleware = asyncHandler(
     });
 
     if (!user) {
-      logger.error("User not found");
-      throw new AppError("User not found", 404);
+      logger.error("Unauthorized Access");
+      throw new NotFoundException("Unauthorized Access");
     }
 
     const isBlacklisted = await prisma.blacklistToken.findUnique({
@@ -44,7 +45,7 @@ export const authMiddleware = asyncHandler(
 
     if (isBlacklisted) {
       logger.error("Token blacklisted");
-      throw new AppError("Token blacklisted", 401);
+      throw new UnauthorizedException("Token blacklisted. Please login again");
     }
 
     req.user = user;

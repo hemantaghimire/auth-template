@@ -1,4 +1,7 @@
-import { prisma } from "../..";
+import getLogger from "../../config/logger.config";
+import { prisma } from "../../config/database.config";
+
+const logger = getLogger("GitHub.OAuth");
 
 export const githubCallbackHandler = async (
   accessToken: string,
@@ -24,8 +27,11 @@ export const githubCallbackHandler = async (
           bio: profile?._json?.bio || ""
         }
       });
+
+      logger.info(`User with email ${email} registered successfully`);
     }
 
+    logger.info(`User with email ${user.email} logged in successfully`);
     return done(null, user);
   } catch (error) {
     return done(error, null);

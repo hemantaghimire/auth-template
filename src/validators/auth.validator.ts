@@ -1,21 +1,20 @@
 import { z } from "zod";
 
-const authSchema = z.object({
+export const authSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
   password: z
     .string()
     .min(6, { message: "Password must be at least 6 characters long" })
 });
 
-const registerSchema = authSchema.extend({
+export const registerSchema = authSchema.extend({
   username: z
     .string()
     .min(3, { message: "Username must be at least 3 characters long" })
 });
+export const loginSchema = authSchema;
 
-const loginSchema = authSchema;
-
-const updateProfileSchema = z.object({
+export const updateProfileSchema = z.object({
   username: z
     .string()
     .min(3, { message: "Username must be at least 3 characters long" })
@@ -42,7 +41,7 @@ const updateProfileSchema = z.object({
     .optional()
 });
 
-const changePasswordSchema = z
+export const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(6, {
       message: "Current password must be at least 6 characters long"
@@ -59,17 +58,17 @@ const changePasswordSchema = z
     path: ["confirmPassword"]
   });
 
-const deleteAccountSchema = z.object({
+export const deleteAccountSchema = z.object({
   password: z
     .string()
     .min(6, { message: "Password must be at least 6 characters long" })
 });
 
-const forgotPasswordSchema = z.object({
+export const forgotPasswordSchema = z.object({
   email: z.string().email({ message: "Invalid email address" })
 });
 
-const resetPasswordSchema = z
+export const resetPasswordSchema = z
   .object({
     password: z
       .string()
@@ -83,17 +82,16 @@ const resetPasswordSchema = z
     path: ["confirmPassword"]
   });
 
-const verifyEmailSchema = z.object({
+export const verifyEmailSchema = z.object({
   token: z.string({ message: "Token is required" })
 });
 
-export default {
-  registerSchema,
-  loginSchema,
-  updateProfileSchema,
-  changePasswordSchema,
-  deleteAccountSchema,
-  forgotPasswordSchema,
-  resetPasswordSchema,
-  verifyEmailSchema
-};
+export type AuthInput = z.infer<typeof authSchema>;
+export type RegisterInput = z.infer<typeof registerSchema>;
+export type LoginInput = z.infer<typeof loginSchema>;
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
